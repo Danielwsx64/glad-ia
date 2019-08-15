@@ -25,7 +25,9 @@ void defineTarget(ActionSet *glad_action, int x, int y);
 void definePriority(ActionSet *glad_action, int priority);
 // =======================================
 
+
 loop(){
+
   ActionSet glad_action;
 
   huntMove(&glad_action);
@@ -34,16 +36,26 @@ loop(){
 }
 
 int huntMove(ActionSet *glad_action){
-  int target[2];
+  int x, y;
+  char mensagem[3];
 
-  if(howManyEnemies() > 0){
+  if(getCloseEnemy()){
     speak("I can see you!");
+
+    /* defineTarget(glad_action, getTargetX(), getTargetY()); */
+
     return 1;
+  }else{
+    speak("I'm looking for someone!");
+
+    x = rand() % 25;
+    y = rand() % 25;
+
+    defineTarget(glad_action, x, y);
   }
 
   purposeHunting(glad_action);
   actionMove(glad_action);
-  defineTarget(glad_action, 15, 15);
   definePriority(glad_action, 0);
 
   return 0;
@@ -74,6 +86,8 @@ void purposeHunting(ActionSet *glad_action){
 void actionMove(ActionSet *glad_action){
   glad_action->action = 1;
 }
+
+// Helper functions
 
 void defineTarget(ActionSet *glad_action, int x, int y){
   glad_action->targetX = x;
