@@ -1,8 +1,26 @@
-// Actions:
-// 1 - move to the target
+int howManyEnemies();
+void speak(char *);
+int rand();
+int moveTo(int x, int y);
+int getSTR();
+int getHp();
+int getX();
+int getY();
+int isSafeThere (float x, float y);
+float getSafeRadius();
 
-// Purposes:
-// 1 - Hunt an enemy
+#define CENTER_POSITION 12
+
+#define NO_ACTION 0
+#define MOVE_ACTION 1
+
+#define NO_PURPOSE 0
+#define HUNT_PURPOSE 1
+
+#define NO_PRIORITY 0
+#define LOW_PRIORITY 1
+#define MEDIUM_PRIORITY 2
+#define HIGH_PRIORITY 3
 
 struct ActionSet_s{
   int targetX;
@@ -10,53 +28,65 @@ struct ActionSet_s{
   int action;
   int purpose;
   int priority;
-} ActionSet_default = {0, 0, 0, 0, 0};
+} ActionSet_default = {0, 0, NO_ACTION, NO_PURPOSE, 0};
 
 typedef struct ActionSet_s ActionSet;
 
 ActionSet old_glad_action;
 
+
 // ==== Function prototypes ==============
 int huntMove(ActionSet *glad_action);
 void performAction(ActionSet glad_action);
-void purposeHunting(ActionSet *glad_action);
-void actionMove(ActionSet *glad_action);
+void definePurpose(ActionSet *glad_action, int purpose);
+void defineAction(ActionSet *glad_action, int action);
 void defineTarget(ActionSet *glad_action, int x, int y);
 void definePriority(ActionSet *glad_action, int priority);
-// =======================================
+int lastTargetX();
+int lastTargetY();
+int lastPurpose();
+int targetSafe(int x, int y);
 
+int makeTargetSafe(int point);
 
-loop(){
+int loop(){
 
   ActionSet glad_action;
 
   huntMove(&glad_action);
 
   performAction(glad_action);
+
+  return 0;
 }
 
 int huntMove(ActionSet *glad_action){
-  int x, y;
-  char mensagem[3];
+  int targetX, targetY;
 
-  if(getCloseEnemy()){
+  if(howManyEnemies()){
     speak("I can see you!");
-
-    /* defineTarget(glad_action, getTargetX(), getTargetY()); */
-
     return 1;
-  }else{
-    speak("I'm looking for someone!");
-
-    x = rand() % 25;
-    y = rand() % 25;
-
-    defineTarget(glad_action, x, y);
   }
 
-  purposeHunting(glad_action);
-  actionMove(glad_action);
-  definePriority(glad_action, 0);
+  speak("I'm looking for someone!");
+
+  if(lastPurpose() == HUNT_PURPOSE && lastTargetX() != getX() && lastTargetY() != getY()){
+    targetX = lastTargetX();
+    targetY = lastTargetY();
+  }else{
+    targetX = ( rand() % 23 ) + 1;
+    targetY = ( rand() % 23 ) + 1;
+  }
+
+  while(!targetSafe(targetX, targetY)){
+    targetX = makeTargetSafe(targetX);
+    targetY = makeTargetSafe(targetY);
+  }
+
+  defineTarget(glad_action, targetX, targetY);
+  definePurpose(glad_action, HUNT_PURPOSE);
+  defineAction(glad_action, MOVE_ACTION);
+  definePriority(glad_action, NO_PRIORITY);
 
   return 0;
 }
@@ -76,18 +106,13 @@ void performAction(ActionSet glad_action){
   old_glad_action = glad_action;
 }
 
-
-// Purposes deinition
-void purposeHunting(ActionSet *glad_action){
-  glad_action->purpose = 1;
+void definePurpose(ActionSet *glad_action, int purpose){
+  glad_action->purpose = purpose;
 }
 
-//Actions definition
-void actionMove(ActionSet *glad_action){
-  glad_action->action = 1;
+void defineAction(ActionSet *glad_action, int action){
+  glad_action->action = action;
 }
-
-// Helper functions
 
 void defineTarget(ActionSet *glad_action, int x, int y){
   glad_action->targetX = x;
@@ -96,6 +121,38 @@ void defineTarget(ActionSet *glad_action, int x, int y){
 
 void definePriority(ActionSet *glad_action, int priority){
   glad_action->priority = priority;
+}
+
+int lastPurpose(){
+  return old_glad_action.purpose;
+}
+
+int lastTargetX(){
+  return old_glad_action.targetX;
+}
+
+int lastTargetY(){
+  return old_glad_action.targetY;
+}
+
+int targetSafe(int x, int y){
+  if(x < 1 || y < 1 || x > 24 || y > 24){
+    return 0;
+  }
+
+  if(getSafeRadius() < 3){
+    return 1;
+  }
+
+  return isSafeThere(x, y);
+}
+
+int makeTargetSafe(int point){
+  if(point > CENTER_POSITION) {
+    return point -1;
+  }
+
+  return point + 1;
 }
 
 int maxHP(){
